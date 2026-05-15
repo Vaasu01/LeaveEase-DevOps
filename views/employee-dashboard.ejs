@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - LeaveEase</title>
+    <link rel="stylesheet" href="/public/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+            <button onclick="navigate('dashboard')" class="dashboard-nav-btn active">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button onclick="navigate('profile')" class="dashboard-nav-btn">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button onclick="navigate('leave')" class="dashboard-nav-btn">
+                <i class="fas fa-calendar-alt"></i> Leave Application
+            </button>
+            <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+
+        <div class="dashboard-main">
+            <div class="dashboard-topbar">
+                <div class="dashboard-welcome">
+                    <h3>Welcome, <span id="employeeName"><%= user.name %></span></h3>
+                    <p class="dashboard-date" id="currentDate"></p>
+                </div>
+                <div class="dashboard-icons">
+                    <button title="Profile" onclick="navigate('profile')" class="dashboard-icon-btn">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <button title="Notification" onclick="event.stopPropagation();" class="dashboard-icon-btn" id="notificationBell">
+                        <i class="fas fa-bell"></i>
+                        <% if (notifications && notifications.length > 0) { %>
+                          <span class="dashboard-notification-badge"><%= notifications.length %></span>
+                        <% } %>
+                    </button>
+                    <div class="notification-dropdown" id="notificationDropdown" style="display:none;">
+                        <% if (notifications && notifications.length > 0) { %>
+                            <ul>
+                                <% notifications.forEach(function(note) { %>
+                                    <li>
+                                        <div class="notif-message"><%= note.message %></div>
+                                        <div class="notif-date"><%= new Date(note.created_at).toLocaleString() %></div>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } else { %>
+                            <div class="notif-empty">No notifications</div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard-stats-row">
+                <div class="dashboard-stat-box">
+                    <span class="dashboard-card-header"><i class="fas fa-calendar-alt"></i> Leaves Applied</span>
+                    <span class="dashboard-card-value"><%= leavesApplied %></span>
+                    <span class="dashboard-card-subtitle">Total requests</span>
+                </div>
+                <div class="dashboard-stat-box">
+                    <span class="dashboard-card-header"><i class="fas fa-calendar"></i> This Month</span>
+                    <span class="dashboard-card-value"><%= leavesAppliedThisMonth %></span>
+                    <span class="dashboard-card-subtitle">Applied this month</span>
+                </div>
+                <div class="dashboard-stat-box">
+                    <span class="dashboard-card-header"><i class="fas fa-calendar"></i> This Year</span>
+                    <span class="dashboard-card-value"><%= leavesAppliedThisYear %></span>
+                    <span class="dashboard-card-subtitle">Applied this year</span>
+                </div>
+            </div>
+            <div class="dashboard-status-breakdown">
+                <div><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Approved <br><strong><%= stats.approved %></strong></div>
+                <div><i class="fas fa-times-circle" style="color:#e74c3c;"></i> Rejected <br><strong><%= stats.rejected %></strong></div>
+                <div><i class="fas fa-clock" style="color:#e67e22;"></i> Pending <br><strong><%= stats.pending %></strong></div>
+                <div><i class="fas fa-list" style="color:#5c9e8f;"></i> Total <br><strong><%= stats.total %></strong></div>
+            </div>
+            <div class="dashboard-analytics-container">
+                <div class="chart-container">
+                    <div class="chart-row">
+                        <div class="chart-box">
+                            <h3>Leave Status Distribution</h3>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h3>Leaves Applied Per Month</h3>
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="recent-leaves-table">
+                <h3 style="margin-bottom:0.7rem;text-align:center;font-size:1.08rem;letter-spacing:0.01em;">Recent Leave Requests</h3>
+                <% if (recentLeaves.length === 0) { %>
+                    <div class="recent-leaves-empty">No leave requests yet.</div>
+                <% } else { %>
+                <table class="recent-leaves-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% recentLeaves.forEach(function(req) { %>
+                            <tr>
+                                <td><%= req.leave_type %></td>
+                                <td><%= req.from_date %></td>
+                                <td><%= req.to_date %></td>
+                                <td>
+                                    <% if (req.status === 'approved') { %>
+                                        <span class="status-badge approved">Approved</span>
+                                    <% } else if (req.status === 'rejected') { %>
+                                        <span class="status-badge rejected">Rejected</span>
+                                    <% } else { %>
+                                        <span class="status-badge pending">Pending</span>
+                                        <div class="leave-actions">
+                                            <button onclick="editLeave('<%= req.leave_application_id %>')" class="action-btn edit-btn" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button onclick="deleteLeave('<%= req.leave_application_id %>')" class="action-btn delete-btn" title="Delete">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Inject dashboard data as data attributes to avoid linter errors -->
+    <div id="dashboard-data"
+         data-leave-status='<%- JSON.stringify([stats.approved, stats.rejected, stats.pending]) %>'
+         data-monthly-leave-counts='<%- JSON.stringify(monthlyLeaveCounts) %>'
+         style="display:none"></div>
+    <script>
+        const dashboardData = document.getElementById('dashboard-data');
+        const leaveStatusData = JSON.parse(dashboardData.getAttribute('data-leave-status'));
+        const monthlyLeaveCountsData = JSON.parse(dashboardData.getAttribute('data-monthly-leave-counts'));
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pie Chart for Leave Status
+            const statusPie = document.getElementById('statusChart');
+            if (statusPie) {
+                new Chart(statusPie, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Approved', 'Rejected', 'Pending'],
+                        datasets: [{
+                            data: leaveStatusData,
+                            backgroundColor: ['#2ecc71', '#e74c3c', '#e67e22'],
+                            borderWidth: 1.5
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { display: true, position: 'bottom' }
+                        }
+                    }
+                });
+            }
+            // Bar Chart for Monthly Leave Applications
+            const monthlyBar = document.getElementById('monthlyChart');
+            if (monthlyBar) {
+                new Chart(monthlyBar, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        datasets: [{
+                            label: 'Leaves Applied',
+                            data: monthlyLeaveCountsData,
+                            backgroundColor: '#5c9e8f',
+                            borderRadius: 8,
+                            maxBarThickness: 32
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, precision: 0 }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+            // Notification dropdown logic
+            const bellBtn = document.getElementById('notificationBell');
+            const dropdown = document.getElementById('notificationDropdown');
+            if (bellBtn && dropdown) {
+                bellBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                });
+                document.addEventListener('click', function() {
+                    dropdown.style.display = 'none';
+                });
+                dropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            }
+        });
+    </script>
+    <script>
+        function navigate(page) {
+            try {
+                if (page === 'dashboard') {
+                    window.location.href = '/dashboard';
+                } else if (page === 'profile') {
+                    window.location.href = '/profile';
+                } else if (page === 'leave') {
+                    window.location.href = '/leave-apply';
+                } else if (page === 'notification') {
+                    window.location.href = '/notifications';
+                } else if (page === 'team') {
+                    window.location.href = '/team-calendar';
+                } else if (page === 'documents') {
+                    window.location.href = '/documents';
+                }
+            } catch (error) {
+                console.error('Navigation error:', error);
+                alert('An error occurred while navigating. Please try again.');
+            }
+        }
+
+        function logout() {
+            try {
+                if (confirm('Are you sure you want to logout?')) {
+                    window.location.href = '/auth/logout';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('An error occurred during logout. Please try again.');
+            }
+        }
+
+        // Set current date
+        try {
+            const date = new Date();
+            document.getElementById('currentDate').textContent = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (error) {
+            console.error('Date formatting error:', error);
+        }
+
+        function editLeave(leaveId) {
+            if (confirm('Do you want to edit this leave request?')) {
+                window.location.href = `/leave-edit/${leaveId}`;
+            }
+        }
+
+        function deleteLeave(leaveId) {
+            if (confirm('Are you sure you want to delete this leave request?')) {
+                fetch(`/leave-delete/${leaveId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Failed to delete leave request. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the leave request. Please try again.');
+                });
+            }
+        }
+    </script>
+    <style>
+    /* Modern dashboard main area redesign */
+    .dashboard-main {
+        background: #f7faf9;
+        min-height: 100vh;
+        padding: 2.5rem 2.5rem 2rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+    .dashboard-topbar {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(92,158,143,0.10);
+        padding: 1.5rem 2.5rem;
+        margin-bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .dashboard-welcome h3 {
+        color: #46796f;
+        font-size: 1.5rem;
+        margin: 0 0 0.2rem 0;
+        font-weight: 700;
+    }
+    .dashboard-date {
+        color: #5c9e8f;
+        font-size: 1rem;
+        margin: 0;
+    }
+    .dashboard-icons {
+        display: flex;
+        gap: 1.2rem;
+        align-items: center;
+    }
+    .dashboard-icon-btn {
+        background: none;
+        border: none;
+        font-size: 1.3rem;
+        color: #46796f;
+        cursor: pointer;
+        position: relative;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: background 0.15s;
+    }
+    .dashboard-icon-btn:hover {
+        background: #f0f7f5;
+    }
+    .dashboard-notification-badge {
+        position: absolute;
+        top: -6px;
+        right: -8px;
+        background: #e74c3c;
+        color: #fff;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        padding: 2px 6px;
+        font-weight: bold;
+    }
+    .dashboard-stats-row {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    .dashboard-stat-box {
+        flex: 1;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(92,158,143,0.10);
+        padding: 1.5rem 1rem 1.2rem 1rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .dashboard-card-header {
+        font-size: 1.08rem;
+        color: #46796f;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+        letter-spacing: 0.01em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .dashboard-card-header i {
+        font-size: 1.2rem;
+        color: #5c9e8f;
+    }
+    .dashboard-card-value {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #3a4d47;
+        margin-bottom: 0.1rem;
+    }
+    .dashboard-card-subtitle {
+        font-size: 1rem;
+        color: #5c9e8f;
+    }
+    .dashboard-status-breakdown {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        background: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0.7rem 0 1.2rem 0;
+        margin: 0 0 12px 0;
+        gap: 1.5rem;
+        border: none;
+    }
+    .dashboard-status-breakdown div {
+        flex: 1;
+        min-width: 0;
+        background: #fff;
+        border-radius: 30px;
+        box-shadow: 0 2px 8px rgba(92,158,143,0.07);
+        padding: 0.7rem 0.5rem;
+        text-align: center;
+        margin: 0 0.2rem;
+        font-size: 1.08rem;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .dashboard-status-breakdown i {
+        margin-bottom: 0.2rem;
+        font-size: 1.2rem;
+    }
+    .dashboard-analytics-container {
+        width: 100%;
+        margin: 0 0 12px 0;
+    }
+    .chart-container {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(92,158,143,0.10);
+        padding: 2rem 1.5rem 2.5rem 1.5rem;
+        width: 100%;
+    }
+    .chart-row {
+        display: flex;
+        gap: 2.5rem;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .chart-box {
+        flex: 1;
+        min-width: 0;
+        max-width: 350px;
+        margin: 0 auto;
+        background: none;
+    }
+    .chart-box h3 {
+        color: #46796f;
+        font-size: 1.08rem;
+        margin-bottom: 0.7rem;
+        text-align: center;
+        font-weight: 600;
+    }
+    #statusChart, #monthlyChart {
+        max-width: 320px;
+        max-height: 220px;
+        margin: 0 auto;
+        background: #fff;
+    }
+    .recent-leaves-table {
+        width: 100%;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(92,158,143,0.10);
+        padding: 1.2rem 1rem 1rem 1rem;
+        margin-top: 12px;
+    }
+    .recent-leaves-table th, .recent-leaves-table td {
+        font-size: 1rem;
+        padding: 0.7rem 0.3rem;
+        text-align: center;
+    }
+    .recent-leaves-empty {
+        text-align: center;
+        padding: 2rem 0;
+        color: #666;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.45em 1.2em;
+        border-radius: 14px;
+        font-size: 1em;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #fff;
+        margin: 0 0.1em;
+        box-shadow: 0 1px 4px rgba(92,158,143,0.10);
+    }
+    .status-badge.approved {
+        background: #2ecc71;
+    }
+    .status-badge.rejected {
+        background: #e74c3c;
+    }
+    .status-badge.pending {
+        background: #e67e22;
+    }
+    @media (max-width: 1100px) {
+        .chart-row {
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .dashboard-stats-row, .dashboard-status-breakdown {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 0.7rem 0.5rem;
+        }
+        .dashboard-stat-box, .dashboard-status-breakdown div {
+            border-right: none;
+            border-bottom: 1px solid #e6e6e6;
+        }
+        .dashboard-stat-box:last-child, .dashboard-status-breakdown div:last-child {
+            border-bottom: none;
+        }
+    }
+    @media (max-width: 600px) {
+        .dashboard-main {
+            padding: 0.5rem;
+        }
+        .chart-box {
+            max-width: 100vw;
+        }
+        #statusChart, #monthlyChart {
+            max-width: 95vw;
+        }
+    }
+    .notification-dropdown {
+        position: absolute;
+        right: 0;
+        top: 2.5rem;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(92,158,143,0.15);
+        border-radius: 10px;
+        min-width: 320px;
+        z-index: 100;
+        padding: 1rem 0.5rem;
+    }
+    .notification-dropdown ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .notification-dropdown li {
+        border-bottom: 1px solid #eee;
+        padding: 0.7rem 0.5rem;
+    }
+    .notification-dropdown li:last-child {
+        border-bottom: none;
+    }
+    .notif-message {
+        color: #46796f;
+        font-size: 1rem;
+    }
+    .notif-date {
+        color: #aaa;
+        font-size: 0.85rem;
+    }
+    .notif-empty {
+        color: #888;
+        text-align: center;
+        padding: 1rem 0;
+    }
+    .leave-actions {
+        display: inline-flex;
+        gap: 0.5rem;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.3rem;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .edit-btn {
+        color: #3498db;
+    }
+
+    .edit-btn:hover {
+        background: rgba(52, 152, 219, 0.1);
+    }
+
+    .delete-btn {
+        color: #e74c3c;
+    }
+
+    .delete-btn:hover {
+        background: rgba(231, 76, 60, 0.1);
+    }
+    </style>
+</body>
+</html> 

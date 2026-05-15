@@ -1,0 +1,33 @@
+# ─────────────────────────────────────────────────────────────
+# .dockerignore  –  files NOT copied into the Docker image
+# Keeps the image lean and avoids leaking secrets
+# ─────────────────────────────────────────────────────────────
+
+# Node dependencies (re-installed inside the image by npm install)
+node_modules/
+
+# Git history – not needed at runtime
+.git/
+.gitignore
+
+# Local environment file – values are injected via docker-compose environment:
+.env
+
+# Editor / OS noise
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker files themselves (no need to copy into image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI / docs
+Jenkinsfile
+README.md

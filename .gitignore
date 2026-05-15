@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────────────────────
+# .gitignore  –  LeaveEase project
+# ─────────────────────────────────────────────────────────────
+
+# ── Node ──────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Environment / secrets (NEVER commit these) ────────────────
+.env
+.env.*
+!.env.example        # allow the example template to be committed
+
+# ── Logs ──────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── OS noise ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor configs ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Docker volumes / local data ───────────────────────────────
+mysql_data/
+
+# ── Build artefacts ───────────────────────────────────────────
+dist/
+build/

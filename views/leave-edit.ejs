@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Leave Request - LeaveEase</title>
+    <link rel="stylesheet" href="/public/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .leave-form-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(92,158,143,0.10);
+            padding: 2rem;
+            margin-top: 1.5rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .leave-apply-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-row label {
+            color: #46796f;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .form-row input,
+        .form-row select,
+        .form-row textarea {
+            padding: 0.8rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .form-row input:focus,
+        .form-row select:focus,
+        .form-row textarea:focus {
+            border-color: #5c9e8f;
+            outline: none;
+        }
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .submit-btn {
+            background: #5c9e8f;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .submit-btn:hover {
+            background: #46796f;
+        }
+        .cancel-btn {
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .cancel-btn:hover {
+            background: #d0d0d0;
+        }
+        .error-message {
+            background: #fee;
+            color: #e74c3c;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+            <button onclick="navigate('dashboard')" class="dashboard-nav-btn">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button onclick="navigate('profile')" class="dashboard-nav-btn">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button onclick="navigate('leave')" class="dashboard-nav-btn active">
+                <i class="fas fa-calendar-alt"></i> Leave Application
+            </button>
+            <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        <div class="dashboard-main">
+            <div class="dashboard-topbar">
+                <div class="dashboard-welcome">
+                    <h3>Edit Leave Request</h3>
+                </div>
+            </div>
+            <div class="leave-form-card">
+                <% if (error) { %>
+                    <div class="error-message"><%= error %></div>
+                <% } %>
+                <% if (success) { %>
+                    <div class="success-message"><%= success %></div>
+                <% } %>
+                <form method="POST" action="/leave-edit/<%= leave.leave_application_id %>" class="leave-apply-form">
+                    <div class="form-row">
+                        <label for="leaveType">Leave Type:</label>
+                        <select id="leaveType" name="leaveType" required>
+                            <option value="">Select Leave Type</option>
+                            <% leaveTypes.forEach(function(type) { %>
+                                <option value="<%= type.leave_type_id %>" <%= type.leave_type_id === leave.leave_type_id ? 'selected' : '' %>>
+                                    <%= type.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="fromDate">From Date:</label>
+                        <input type="date" id="fromDate" name="fromDate" value="<%= leave.from_date %>" required />
+                    </div>
+                    <div class="form-row">
+                        <label for="toDate">To Date:</label>
+                        <input type="date" id="toDate" name="toDate" value="<%= leave.to_date %>" required />
+                    </div>
+                    <div class="form-row">
+                        <label for="reason">Reason:</label>
+                        <textarea id="reason" name="reason" rows="3" required><%= leave.reason %></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">Update Request</button>
+                        <button type="button" onclick="window.location.href='/dashboard'" class="cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function navigate(page) {
+            if (page === 'dashboard') {
+                window.location.href = '/dashboard';
+            } else if (page === 'profile') {
+                window.location.href = '/profile';
+            } else if (page === 'leave') {
+                window.location.href = '/leave-apply';
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Logs - LeaveEase</title>
+  <link rel="stylesheet" href="/public/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-sidebar">
+      <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+      <button onclick="window.location.href='/admin-dashboard'" class="dashboard-nav-btn">
+        <i class="fas fa-user-shield"></i> Admin Dashboard
+      </button>
+      <button onclick="window.location.href='/admin/leave-requests'" class="dashboard-nav-btn">
+        <i class="fas fa-calendar-check"></i> Leave Requests
+      </button>
+      <button onclick="window.location.href='/admin/logs'" class="dashboard-nav-btn active">
+        <i class="fas fa-list"></i> Logs
+      </button>
+      <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+    <div class="dashboard-main">
+      <div class="dashboard-topbar">
+        <div class="dashboard-welcome">
+          <h3>System Logs</h3>
+        </div>
+      </div>
+      <% if (logs.length === 0) { %>
+        <div style="text-align:center;color:#888;">No logs found.</div>
+      <% } else { %>
+        <div style="overflow-x:auto;">
+        <table style="width:100%;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(92,158,143,0.10);margin-top:1.5rem;">
+          <thead>
+            <tr style="background:#f7faf9;">
+              <th style="padding:0.7rem 1rem;">Timestamp</th>
+              <th style="padding:0.7rem 1rem;">User</th>
+              <th style="padding:0.7rem 1rem;">Action</th>
+              <th style="padding:0.7rem 1rem;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% logs.forEach(function(log) { %>
+              <tr>
+                <td style="padding:0.7rem 1rem;"><%= new Date(log.timestamp).toLocaleString() %></td>
+                <td style="padding:0.7rem 1rem;"><%= log.name || log.user_id %></td>
+                <td style="padding:0.7rem 1rem;"><%= log.action %></td>
+                <td style="padding:0.7rem 1rem;"><%= log.description %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+  <script>
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = '/auth/logout';
+      }
+    }
+  </script>
+</body>
+</html> 

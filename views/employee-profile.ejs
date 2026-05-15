@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Profile - LeaveEase</title>
+    <link rel="stylesheet" href="/public/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+            <button onclick="navigate('dashboard')" class="dashboard-nav-btn">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button onclick="navigate('profile')" class="dashboard-nav-btn active">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button onclick="navigate('leave')" class="dashboard-nav-btn">
+                <i class="fas fa-calendar-alt"></i> Leave Application
+            </button>
+            <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        <div class="dashboard-main">
+            <div class="dashboard-topbar">
+                <div class="dashboard-welcome">
+                    <h3>Profile</h3>
+                </div>
+            </div>
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <form id="editProfileForm" method="POST" action="/profile/edit" class="profile-info" autocomplete="off">
+                    <div class="profile-row">
+                        <span class="profile-label">Name:</span>
+                        <span id="profileNameDisplay"><%= user.name %></span>
+                        <input type="text" id="profileNameInput" name="name" value="<%= user.name %>" style="display:none;" required />
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label">Email:</span>
+                        <span id="profileEmailDisplay"><%= user.email %></span>
+                        <input type="email" id="profileEmailInput" name="email" value="<%= user.email %>" style="display:none;" required />
+                    </div>
+                    <div class="profile-row">
+                        <span class="profile-label"><i class='fas fa-calendar-alt'></i> DOB:</span>
+                        <span id="profileDOB"><%= formatDate(user.dob) %></span>
+                    </div>
+                    <button type="button" class="dashboard-action-btn profile-edit-btn" id="editBtn" onclick="enableEdit()">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                    <button type="submit" class="dashboard-action-btn profile-edit-btn" id="saveBtn" style="display:none;">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button type="button" class="dashboard-action-btn profile-edit-btn" id="cancelBtn" style="display:none; background:#ffe8e8; color:#b00020;" onclick="cancelEdit()">
+                        Cancel
+                    </button>
+                </form>
+                <hr style="width:100%;margin:2rem 0 1rem 0;">
+                <h4 style="color:#5c9e8f;margin-bottom:1rem;">Reset Password</h4>
+                <% if (typeof error !== 'undefined') { %>
+                  <div class="error-message"><%= error %></div>
+                <% } %>
+                <% if (typeof success !== 'undefined') { %>
+                  <div class="success-message"><%= success %></div>
+                <% } %>
+                <form method="POST" action="/profile/reset-password" class="reset-password-form">
+                  <div class="profile-row">
+                    <label for="oldPassword" class="profile-label">Old Password:</label>
+                    <input type="password" id="oldPassword" name="oldPassword" required autocomplete="current-password">
+                  </div>
+                  <div class="profile-row">
+                    <label for="newPassword" class="profile-label">New Password:</label>
+                    <input type="password" id="newPassword" name="newPassword" required autocomplete="new-password">
+                  </div>
+                  <div class="profile-row">
+                    <label for="confirmPassword" class="profile-label">Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
+                  </div>
+                  <button type="submit" class="dashboard-action-btn profile-edit-btn" style="margin-top:1rem;">
+                    <i class="fas fa-key"></i> Reset Password
+                  </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function navigate(page) {
+            if (page === 'dashboard') {
+                window.location.href = '/dashboard';
+            } else if (page === 'profile') {
+                window.location.href = '/profile';
+            } else if (page === 'leave') {
+                window.location.href = '/leave-apply';
+            } else if (page === 'notification') {
+                window.location.href = '/notifications';
+            }
+        }
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
+        <%
+          function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+          }
+        %>
+        function enableEdit() {
+            document.getElementById('profileNameDisplay').style.display = 'none';
+            document.getElementById('profileEmailDisplay').style.display = 'none';
+            document.getElementById('profileNameInput').style.display = '';
+            document.getElementById('profileEmailInput').style.display = '';
+            document.getElementById('editBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = '';
+            document.getElementById('cancelBtn').style.display = '';
+        }
+        function cancelEdit() {
+            document.getElementById('profileNameDisplay').style.display = '';
+            document.getElementById('profileEmailDisplay').style.display = '';
+            document.getElementById('profileNameInput').style.display = 'none';
+            document.getElementById('profileEmailInput').style.display = 'none';
+            document.getElementById('editBtn').style.display = '';
+            document.getElementById('saveBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+    </script>
+    <style>
+        .profile-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(92, 158, 143, 0.15);
+            max-width: 480px;
+            margin: 2rem auto;
+            padding: 2.5rem 2rem 2rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .profile-avatar {
+            font-size: 5rem;
+            color: #5c9e8f;
+            margin-bottom: 1.5rem;
+        }
+        .profile-info {
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+        .profile-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .profile-label {
+            font-weight: 600;
+            color: #5c9e8f;
+        }
+        .profile-edit-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .error-message {
+          background-color: #ffe8e8;
+          color: #b00020;
+          border: 1.5px solid #e0b4b4;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          font-size: 0.95rem;
+          text-align: center;
+          font-weight: 600;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .success-message {
+          background-color: #e6f9ed;
+          color: #2e7d32;
+          border: 1.5px solid #b4e0c2;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          font-size: 0.95rem;
+          text-align: center;
+          font-weight: 600;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .reset-password-form input[type="password"] {
+          flex: 1;
+          padding: 0.5rem 1rem;
+          border: 1.5px solid #d6e1dc;
+          border-radius: 8px;
+          font-size: 1rem;
+          outline: none;
+          margin-left: 1rem;
+        }
+        @media (max-width: 600px) {
+            .profile-card {
+                padding: 1.2rem 0.5rem;
+            }
+            .profile-row {
+                flex-direction: column;
+                align-items: flex-start;
+                font-size: 1rem;
+            }
+            .reset-password-form input[type="password"] {
+              margin-left: 0;
+              width: 100%;
+              margin-top: 0.5rem;
+            }
+        }
+    </style>
+</body>
+</html> 

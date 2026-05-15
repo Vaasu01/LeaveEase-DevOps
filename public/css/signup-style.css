@@ -1,0 +1,88 @@
+/* signup-style.css */
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f5f9f8;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.signup-wrapper {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  width: 350px;
+}
+
+.signup-form h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2c6e49; /* Ivory Leaf green */
+}
+
+.signup-form label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #4a4a4a;
+  font-weight: 600;
+}
+
+.signup-form input,
+.signup-form select {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.signup-form select {
+  background-color: white;
+}
+
+.signup-form input:focus,
+.signup-form select:focus {
+  outline: none;
+  border-color: #2c6e49;
+  box-shadow: 0 0 5px rgba(44, 110, 73, 0.5);
+}
+
+.cta-btn {
+  width: 100%;
+  background-color: #2c6e49;
+  color: white;
+  font-size: 1.1rem;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+}
+
+.cta-btn:hover {
+  background-color: #225936;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 1rem;
+  color: #666;
+}
+
+.login-link a {
+  color: #2c6e49;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}

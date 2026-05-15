@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Leave Request - LeaveEase</title>
+    <link rel="stylesheet" href="/public/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+            <button onclick="navigate('dashboard')" class="dashboard-nav-btn">
+                <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button onclick="navigate('profile')" class="dashboard-nav-btn">
+                <i class="fas fa-user"></i> Profile
+            </button>
+            <button onclick="navigate('leave')" class="dashboard-nav-btn active">
+                <i class="fas fa-calendar-alt"></i> Leave Application
+            </button>
+            <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        <div class="dashboard-main">
+            <div class="dashboard-topbar">
+                <div class="dashboard-welcome">
+                    <h3>New Leave Request</h3>
+                </div>
+            </div>
+            <div class="leave-form-card">
+                <% if (typeof error !== 'undefined') { %>
+                  <div class="error-message"><%= error %></div>
+                <% } %>
+                <% if (typeof success !== 'undefined') { %>
+                  <div class="success-message"><%= success %></div>
+                <% } %>
+                <form method="POST" action="/leave-apply" class="leave-apply-form">
+                    <div class="form-row">
+                        <label for="leaveType">Leave Type:</label>
+                        <select id="leaveType" name="leaveType" required>
+                            <option value="">Select Leave Type</option>
+                            <% leaveTypes.forEach(function(type) { %>
+                                <option value="<%= type.leave_type_id %>"><%= type.name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="fromDate">From Date:</label>
+                        <input type="date" id="fromDate" name="fromDate" required />
+                    </div>
+                    <div class="form-row">
+                        <label for="toDate">To Date:</label>
+                        <input type="date" id="toDate" name="toDate" required />
+                    </div>
+                    <div class="form-row">
+                        <label for="reason">Reason:</label>
+                        <textarea id="reason" name="reason" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="dashboard-action-btn" style="width:100%;margin-top:1rem;">
+                        <i class="fas fa-paper-plane"></i> Submit Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function navigate(page) {
+            if (page === 'dashboard') {
+                window.location.href = '/dashboard';
+            } else if (page === 'profile') {
+                window.location.href = '/profile';
+            } else if (page === 'leave') {
+                window.location.href = '/leave-apply';
+            } else if (page === 'notification') {
+                window.location.href = '/notifications';
+            }
+        }
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
+    </script>
+    <style>
+        .leave-form-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(92, 158, 143, 0.15);
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2.5rem 2rem 2rem 2rem;
+        }
+        .leave-apply-form .form-row {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1.2rem;
+        }
+        .leave-apply-form label {
+            font-weight: 600;
+            color: #5c9e8f;
+            margin-bottom: 0.4rem;
+        }
+        .leave-apply-form input[type="date"],
+        .leave-apply-form select,
+        .leave-apply-form textarea {
+            padding: 0.6rem 1rem;
+            border: 1.5px solid #d6e1dc;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+        .leave-apply-form textarea {
+            resize: vertical;
+        }
+        .leave-apply-form input[type="date"]:focus,
+        .leave-apply-form select:focus,
+        .leave-apply-form textarea:focus {
+            border-color: #5c9e8f;
+            box-shadow: 0 0 5px #5c9e8f88;
+        }
+    </style>
+</body>
+</html> 

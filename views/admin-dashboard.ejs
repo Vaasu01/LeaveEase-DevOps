@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LeaveEase</title>
+    <link rel="stylesheet" href="/public/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-sidebar">
+            <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+            <button onclick="window.location.href='/admin-dashboard'" class="dashboard-nav-btn active">
+                <i class="fas fa-user-shield"></i> Admin Dashboard
+            </button>
+            <button onclick="window.location.href='/admin/leave-requests'" class="dashboard-nav-btn">
+                <i class="fas fa-calendar-check"></i> Leave Requests
+            </button>
+            <button onclick="window.location.href='/admin/logs'" class="dashboard-nav-btn">
+                <i class="fas fa-list"></i> View Logs
+            </button>
+            <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        <div class="dashboard-main">
+            <div class="dashboard-topbar" style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="dashboard-welcome">
+                    <h3>Welcome, Admin</h3>
+                </div>
+                <div class="dashboard-icons">
+                    <button title="Profile" onclick="window.location.href='/admin-profile'" class="dashboard-icon-btn">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <button title="Notifications" class="dashboard-icon-btn">
+                        <i class="fas fa-bell"></i>
+                        <% if (typeof notifications !== 'undefined' && notifications.length > 0) { %>
+                          <span class="dashboard-notification-badge"><%= notifications.length %></span>
+                        <% } %>
+                    </button>
+                    <button title="Logout" onclick="logout()" class="dashboard-icon-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <i class="fas fa-calendar-check"></i> Total Requests
+                    </div>
+                    <div class="dashboard-card-value"><%= typeof stats !== 'undefined' ? stats.total : '-' %></div>
+                    <span class="dashboard-card-subtitle">All leave requests</span>
+                </div>
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <i class="fas fa-clock"></i> Pending
+                    </div>
+                    <div class="dashboard-card-value" style="color:#e67e22;"><%= typeof stats !== 'undefined' ? stats.pending : '-' %></div>
+                    <span class="dashboard-card-subtitle">Awaiting action</span>
+                </div>
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <i class="fas fa-check-circle"></i> Approved
+                    </div>
+                    <div class="dashboard-card-value" style="color:#2ecc71;"><%= typeof stats !== 'undefined' ? stats.approved : '-' %></div>
+                    <span class="dashboard-card-subtitle">Approved requests</span>
+                </div>
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <i class="fas fa-times-circle"></i> Rejected
+                    </div>
+                    <div class="dashboard-card-value" style="color:#e74c3c;"><%= typeof stats !== 'undefined' ? stats.rejected : '-' %></div>
+                    <span class="dashboard-card-subtitle">Rejected requests</span>
+                </div>
+            </div>
+            <div style="margin-top:2.5rem;text-align:center;">
+                <button onclick="window.location.href='/admin/leave-requests'" class="dashboard-action-btn" style="font-size:1.1rem;padding:1rem 2.5rem;">
+                    <i class="fas fa-calendar-check"></i> Manage Leave Requests
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
+    </script>
+</body>
+</html> 

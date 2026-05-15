@@ -1,0 +1,127 @@
+/* login-style.css */
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f1f3ec; /* Soft ivory-green background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-container {
+  background-color: white;
+  padding: 2.5rem 3rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(92, 158, 143, 0.25);
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-form h2 {
+  margin-bottom: 1.5rem;
+  color: #5c9e8f;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+label {
+  font-weight: 600;
+  color: #4a4a4a;
+  margin-bottom: 0.3rem;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+input[type="email"],
+input[type="password"] {
+  padding: 0.6rem 1rem;
+  border: 1.8px solid #d6e1dc;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: #5c9e8f;
+  box-shadow: 0 0 5px #5c9e8f88;
+}
+
+.login-links {
+  margin-top: 0.8rem;
+  text-align: right;
+}
+
+.forgot-link {
+  font-size: 0.9rem;
+  color: #5c9e8f;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-link:hover {
+  color: #46796f;
+  text-decoration: underline;
+}
+
+.cta-btn {
+  margin-top: 1.8rem;
+  background-color: #5c9e8f;
+  color: white;
+  padding: 0.75rem 0;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cta-btn:hover {
+  background-color: #46796f;
+}
+
+.signup-link {
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  text-align: center;
+  color: #4a4a4a;
+}
+
+.signup-link a {
+  color: #5c9e8f;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.signup-link a:hover {
+  color: #46796f;
+  text-decoration: underline;
+}
+
+/* Error message styling */
+.error-message {
+  background-color: #ffe8e8;
+  color: #b00020;
+  border: 1.5px solid #e0b4b4;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  text-align: center;
+  font-weight: 600;
+  /* Ensure error message fits inside form */
+  width: 100%;
+  box-sizing: border-box;
+}

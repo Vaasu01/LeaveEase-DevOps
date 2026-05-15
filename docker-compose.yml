@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────
+# docker-compose.yml  –  LeaveEase full-stack local deployment
+# ─────────────────────────────────────────────────────────────
+# Starts two containers:
+#   mysql  – official MySQL 8 image, auto-creates the database
+#   app    – our Node.js LeaveEase image
+#
+# Run:  docker-compose up --build
+# Stop: docker-compose down
+# Wipe data too: docker-compose down -v
+
+version: "3.9"
+
+services:
+
+  # ── 1. MySQL Database ──────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: leaveease_mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: vaasu          # root password (matches .env)
+      MYSQL_DATABASE: leaveease           # auto-created on first boot
+
+    ports:
+      - "3307:3306"   # host:container  (3307 avoids clash with local MySQL)
+
+    volumes:
+      - mysql_data:/var/lib/mysql         # persist data between restarts
+
+    healthcheck:
+      # Wait until MySQL is actually ready to accept connections
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pvaasu"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── 2. Node.js Application ────────────────────────────────
+  app:
+    build:
+      context: .          # use the Dockerfile in this folder
+      dockerfile: Dockerfile
+
+    container_name: leaveease_app
+    restart: unless-stopped
+
+    # Pass environment variables – overrides anything in .env inside the image
+    environment:
+      DB_HOST: mysql          # service name above, Docker DNS resolves it
+      DB_USER: root
+      DB_PASSWORD: vaasu
+      DB_NAME: leaveease
+      PORT: 3000
+      NODE_ENV: production
+
+    ports:
+      - "3000:3000"           # app available at http://localhost:3000
+
+    depends_on:
+      mysql:
+        condition: service_healthy   # wait for MySQL healthcheck to pass
+
+    # Optional: mount source for live-reload during development
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+
+# ── Named volume (data survives container restarts) ──────────
+volumes:
+  mysql_data:
