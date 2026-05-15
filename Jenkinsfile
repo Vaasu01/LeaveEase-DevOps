@@ -125,7 +125,9 @@ pipeline {
                 // timeout /t 35 /nobreak = Windows equivalent of "sleep 35"
                 // /nobreak means it won't stop if you press a key.
                 echo 'Waiting 35 seconds for MySQL and app to initialise...'
-                bat 'timeout /t 35 /nobreak'
+                // ping 127.0.0.1 -n 36 waits ~35 seconds (each ping reply = 1s, n-1 intervals)
+                // Works under Jenkins Windows service where timeout /t is blocked
+                bat 'ping 127.0.0.1 -n 36 > nul'
 
                 // Show container status in the build log
                 bat 'docker-compose ps'
@@ -144,8 +146,9 @@ pipeline {
                 echo "Checking app is responding at http://localhost:${APP_PORT} ..."
 
                 retry(5) {
-                    // Wait 10 seconds between each retry attempt
-                    bat 'timeout /t 10 /nobreak'
+                    // ping 127.0.0.1 -n 11 waits ~10 seconds between each retry
+                    // Works under Jenkins Windows service where timeout /t is blocked
+                    bat 'ping 127.0.0.1 -n 11 > nul'
 
                     // curl -f  = fail on HTTP 4xx/5xx
                     // -L       = follow redirects (/ redirects to /login)
