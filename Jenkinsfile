@@ -5,9 +5,12 @@
 //   1. Checkout   – pull latest code from GitHub
 //   2. Install    – npm ci (restore node_modules)
 //   3. Validate   – node --check syntax check on all JS files
-//   4. Build      – docker build (create image)
-//   5. Deploy     – docker-compose up (start MySQL + app)
-//   6. Health     – curl localhost:3000 to confirm app is live
+//   4. Deploy     – docker-compose up (uses locally built image)
+//   5. Health     – curl localhost:3000 to confirm app is live
+//
+// NOTE: Docker image (leaveease-app:latest) must already exist locally.
+//       Build it once manually before running the pipeline:
+//         docker build -t leaveease-app:latest .
 //
 // Prerequisites on the Windows Jenkins machine:
 //   • Jenkins running as a Windows service or via java -jar
@@ -87,22 +90,6 @@ pipeline {
                 bat 'node --check controllers/leaveController.js'
 
                 echo 'All JS files passed syntax check.'
-            }
-        }
-
-        // ── STAGE 4: Build Docker Image ───────────────────────
-        // Builds the leaveease-app Docker image from the Dockerfile
-        // in the project root. The image is tagged :latest.
-        stage('Build Docker Image') {
-            steps {
-                echo "Building Docker image: ${IMAGE_NAME}:latest ..."
-
-                bat "docker build -t %IMAGE_NAME%:latest ."
-
-                // List the image so the build log shows it was created
-                bat "docker images %IMAGE_NAME%"
-
-                echo 'Docker image built successfully.'
             }
         }
 
