@@ -5,12 +5,19 @@
 //   1. Checkout   – pull latest code from GitHub
 //   2. Install    – npm ci (restore node_modules)
 //   3. Validate   – node --check syntax check on all JS files
-//   4. Deploy     – docker-compose up (uses locally built image)
-//   5. Health     – curl localhost:3000 to confirm app is live
+//   4. Build      – docker build → leaveease-app:BUILD_NUMBER + :latest
+//   5. Deploy     – stop app container only, start new versioned container
+//   6. Health     – curl localhost:3000 to confirm app is live
 //
-// NOTE: Docker image (leaveease-app:latest) must already exist locally.
-//       Build it once manually before running the pipeline:
-//         docker build -t leaveease-app:latest .
+// Image versioning:
+//   Every build produces:  leaveease-app:42   (BUILD_NUMBER)
+//                          leaveease-app:latest
+//
+// Rollback to any previous build:
+//   docker stop leaveease_app
+//   docker rm   leaveease_app
+//   docker run -d --name leaveease_app --network leaveease_network \
+//     -p 3000:3000 -e DB_HOST=leaveease_mysql ... leaveease-app:36
 //
 // Prerequisites on the Windows Jenkins machine:
 //   • Jenkins running as a Windows service or via java -jar
@@ -26,56 +33,53 @@
 
 pipeline {
 
-    // Run on any available Jenkins agent (the Windows machine itself)
     agent any
 
     // ── Pipeline-wide environment variables ──────────────────
     environment {
-        IMAGE_NAME    = "leaveease-app"     // Docker image name
-        CONTAINER_APP = "leaveease_app"     // app container name
-        CONTAINER_DB  = "leaveease_mysql"   // db  container name
-        APP_PORT      = "3000"              // host port the app listens on
+        IMAGE_NAME    = "leaveease-app"           // base image name
+        IMAGE_TAG     = "leaveease-app:${BUILD_NUMBER}"  // versioned tag
+        IMAGE_LATEST  = "leaveease-app:latest"    // floating latest tag
+        CONTAINER_APP = "leaveease_app"           // app container name
+        CONTAINER_DB  = "leaveease_mysql"         // db  container name
+        APP_PORT      = "3000"                    // host port
+        COMPOSE_FILE  = "docker-compose.yml"
     }
 
-    // ── Global options ───────────────────────────────────────
+    // ── Global options ────────────────────────────────────────
     options {
-        buildDiscarder(logRotator(numToKeepStr: '5'))  // keep last 5 build logs
-        timeout(time: 20, unit: 'MINUTES')             // kill build if it hangs
-        disableConcurrentBuilds()                      // one build at a time
+        buildDiscarder(logRotator(numToKeepStr: '10'))  // keep last 10 builds
+        timeout(time: 20, unit: 'MINUTES')
+        disableConcurrentBuilds()
     }
 
-    // ── Automatic build trigger ───────────────────────────────
-    // PRIMARY:  GitHub webhook  → instant trigger on every push
-    //           Setup: GitHub repo → Settings → Webhooks → Add webhook
-    //           Payload URL: http://<your-jenkins-ip>:8080/github-webhook/
-    //           Content type: application/json  |  Event: Just the push event
+    // ── Triggers ──────────────────────────────────────────────
+    // PRIMARY:  GitHub webhook  → instant on git push
+    //   Setup:  GitHub repo → Settings → Webhooks → Add webhook
+    //           Payload URL: http://<jenkins-ip>:8080/github-webhook/
+    //           Content type: application/json | Event: push
     //
-    // FALLBACK: pollSCM every 2 minutes (works even without webhook)
-    //           Also activates the trigger on first run without manual click.
+    // FALLBACK: pollSCM every 2 minutes (works without webhook)
     triggers {
-        githubPush()                   // webhook: instant on git push
-        pollSCM('H/2 * * * *')        // fallback: poll every 2 minutes
+        githubPush()
+        pollSCM('H/2 * * * *')
     }
 
     stages {
 
         // ── STAGE 1: Checkout ─────────────────────────────────
-        // Jenkins pulls the latest code from the GitHub repo
-        // configured in the job's SCM settings.
         stage('Checkout') {
             steps {
                 echo 'Pulling latest code from GitHub...'
                 checkout scm
-                // Print commit info — appears in build log for traceability
                 bat 'git log -1 --oneline'
                 bat 'git log -1 --format="Commit: %%H | Author: %%an | Date: %%ad" --date=short'
-                echo 'Code checkout complete.'
+                echo "Build number: ${BUILD_NUMBER}"
+                echo 'Checkout complete.'
             }
         }
 
         // ── STAGE 2: Install Dependencies ────────────────────
-        // npm ci = clean install using package-lock.json exactly.
-        // Faster and more reliable than npm install for CI.
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Node.js dependencies...'
@@ -86,16 +90,10 @@ pipeline {
             }
         }
 
-        // ── STAGE 3: Validate (Syntax Check) ─────────────────
-        // node --check parses each JS file for syntax errors
-        // without actually running the file. Fast and safe.
+        // ── STAGE 3: Validate ────────────────────────────────
         stage('Validate') {
             steps {
                 echo 'Running syntax check on all JS files...'
-
-                // Each bat call is a separate command on Windows.
-                // We cannot chain with && inside a single bat block
-                // the same way as Linux sh, so we use one bat per file.
                 bat 'node --check app.js'
                 bat 'node --check db.js'
                 bat 'node --check init-db.js'
@@ -103,62 +101,73 @@ pipeline {
                 bat 'node --check controllers/authController.js'
                 bat 'node --check controllers/leaveController.js'
                 bat 'node --check middleware/auth.js'
-
-                echo 'All JS files passed syntax check.'
+                echo 'All files passed syntax check.'
             }
         }
 
-        // ── STAGE 5: Deploy with Docker Compose ──────────────
-        // Brings down any previous containers, then starts fresh.
-        // docker-compose reads docker-compose.yml in the project root.
-        // The app container waits for MySQL healthcheck before starting.
+        // ── STAGE 4: Build Docker Image ───────────────────────
+        // Builds a NEW image on every pipeline run.
+        // Tags it with the Jenkins BUILD_NUMBER (e.g. leaveease-app:42)
+        // AND updates the :latest tag so docker-compose always uses newest.
+        stage('Build Image') {
+            steps {
+                echo "Building Docker image: ${IMAGE_TAG} ..."
+
+                // Build and tag with build number
+                bat "docker build -t %IMAGE_TAG% ."
+
+                // Also tag as :latest so docker-compose picks it up
+                bat "docker tag %IMAGE_TAG% %IMAGE_LATEST%"
+
+                // Show the new image in the build log
+                bat "docker images %IMAGE_NAME%"
+
+                echo "Image built: ${IMAGE_TAG} and ${IMAGE_LATEST}"
+            }
+        }
+
+        // ── STAGE 5: Deploy ───────────────────────────────────
+        // Stops and removes ONLY the app container.
+        // MySQL container and its data volume are NEVER touched.
+        // Then starts the app using the new versioned image via
+        // docker-compose (which reads IMAGE_APP from environment).
         stage('Deploy') {
             steps {
-                echo 'Stopping any previously running containers...'
+                echo 'Stopping app container only (MySQL stays running)...'
 
-                // "|| exit 0" means: if the command fails (nothing to stop),
-                // treat it as success and continue. Equivalent to Linux "|| true".
-                bat 'docker-compose down --remove-orphans || exit 0'
+                // Stop and remove only the app container — NOT mysql
+                bat "docker stop %CONTAINER_APP% || exit 0"
+                bat "docker rm   %CONTAINER_APP% || exit 0"
 
-                echo 'Starting containers with docker-compose...'
-                bat 'docker-compose up -d'
+                // Ensure MySQL is running (start if not already up)
+                bat "docker-compose up -d mysql || exit 0"
 
-                // Give MySQL + the Node app time to fully initialise.
-                // timeout /t 35 /nobreak = Windows equivalent of "sleep 35"
-                // /nobreak means it won't stop if you press a key.
-                echo 'Waiting 35 seconds for MySQL and app to initialise...'
-                // ping 127.0.0.1 -n 36 waits ~35 seconds (each ping reply = 1s, n-1 intervals)
-                // Works under Jenkins Windows service where timeout /t is blocked
-                bat 'ping 127.0.0.1 -n 36 > nul'
+                echo 'Waiting for MySQL to be healthy...'
+                bat 'ping 127.0.0.1 -n 16 > nul'
 
-                // Show container status in the build log
+                // Start the app container using the new image.
+                // APP_IMAGE env var tells docker-compose which tag to use.
+                echo "Starting app with image: ${IMAGE_TAG} ..."
+                bat "set APP_IMAGE=%IMAGE_TAG% && docker-compose up -d app"
+
+                echo 'Waiting 30 seconds for app to initialise...'
+                bat 'ping 127.0.0.1 -n 31 > nul'
+
+                // Show running containers
                 bat 'docker-compose ps'
 
-                echo 'Containers started.'
+                echo 'Deployment complete.'
             }
         }
 
         // ── STAGE 6: Health Check ─────────────────────────────
-        // curl -f = fail silently with non-zero exit code on HTTP errors.
-        // We try the root URL first; if that redirects to /login that is
-        // also fine — the app is running either way.
-        // retry(5) = try up to 5 times before marking the stage failed.
         stage('Health Check') {
             steps {
-                echo "Checking app is responding at http://localhost:${APP_PORT} ..."
-
+                echo "Checking app at http://localhost:${APP_PORT} ..."
                 retry(5) {
-                    // ping 127.0.0.1 -n 11 waits ~10 seconds between each retry
-                    // Works under Jenkins Windows service where timeout /t is blocked
                     bat 'ping 127.0.0.1 -n 11 > nul'
-
-                    // curl -f  = fail on HTTP 4xx/5xx
-                    // -L       = follow redirects (/ redirects to /login)
-                    // -s       = silent (no progress bar in logs)
-                    // -o NUL   = discard response body (Windows equivalent of /dev/null)
                     bat 'curl -f -L -s -o NUL http://localhost:3000/'
                 }
-
                 echo 'Application is up and responding!'
             }
         }
@@ -169,24 +178,25 @@ pipeline {
 
         success {
             echo '================================================'
-            echo '  BUILD SUCCESSFUL'
-            echo '  LeaveEase is running at http://localhost:3000'
-            echo '  Admin login: admin@leaveease.com / admin123'
+            echo "  BUILD #${BUILD_NUMBER} SUCCESSFUL"
+            echo "  Image: leaveease-app:${BUILD_NUMBER}"
+            echo '  App:   http://localhost:3000'
+            echo '  Login: admin@leaveease.com / admin123'
             echo '================================================'
+            echo "  To rollback: docker stop leaveease_app && docker rm leaveease_app"
+            echo "  Then run:    docker run -d --name leaveease_app ..."
+            echo "  With image:  leaveease-app:<previous_build_number>"
         }
 
         failure {
-            echo 'Build failed. Printing container logs for debugging...'
-            // Show last 50 lines of logs from both containers.
-            // "|| exit 0" prevents this cleanup step from itself failing the build.
-            bat 'docker-compose logs --tail=50 || exit 0'
+            echo 'Build failed. Printing container logs...'
+            bat 'docker logs %CONTAINER_APP% --tail=50 || exit 0'
+            bat 'docker-compose logs --tail=30 || exit 0'
         }
 
         always {
-            echo 'Pipeline finished.'
-            echo 'Containers are still running - open http://localhost:3000 for the demo.'
-            // To automatically stop containers after every build, uncomment:
-            // bat 'docker-compose down || exit 0'
+            echo "Pipeline finished. Build #${BUILD_NUMBER}."
+            echo 'Containers remain running for demo.'
         }
     }
 }

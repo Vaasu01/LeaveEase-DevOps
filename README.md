@@ -13,7 +13,7 @@ A Node.js + MySQL web application with Docker and Jenkins CI/CD pipeline.
 | Database   | MySQL 8                 |
 | Auth       | bcrypt + express-session|
 | Container  | Docker, Docker Compose  |
-| CI/CD      | Jenkins                 |
+| CI/CD      | Jenkins (versioned)     |
 
 ---
 
@@ -22,7 +22,7 @@ A Node.js + MySQL web application with Docker and Jenkins CI/CD pipeline.
 | Role     | Email                  | Password  |
 |----------|------------------------|-----------|
 | Admin    | admin@leaveease.com    | admin123  |
-| Employee | Sign up at /signup     | (your own)|
+| Employee | Created by admin only  | (set by admin) |
 
 ---
 
@@ -54,16 +54,21 @@ Open → http://localhost:3000
 **Prerequisites:** Docker Desktop installed and running
 
 ```bash
-# 1. Build and start both containers (MySQL + Node app)
-docker-compose up --build
+# First time — build the image and start
+docker build -t leaveease-app:latest .
+docker-compose up -d
 
-# First run takes ~60 seconds (MySQL initialises, then app seeds DB)
+# Check status
+docker-compose ps
 ```
 
 Open → http://localhost:3000
 
 ```bash
-# Stop containers
+# Stop app only (MySQL + data preserved)
+docker-compose stop app
+
+# Stop everything (data preserved)
 docker-compose down
 
 # Stop AND delete all data (fresh start)
@@ -72,9 +77,77 @@ docker-compose down -v
 
 ---
 
-## Option C – Jenkins CI/CD Pipeline
+## Option C – Jenkins CI/CD Pipeline (Versioned)
 
-**Prerequisites:** Jenkins with Docker installed on the agent
+### What happens on every git push
+
+```
+git push origin main
+       │
+       ▼
+Jenkins detects push (webhook or poll)
+       │
+       ▼
+Stage 1: Checkout  – pulls latest code
+Stage 2: Install   – npm ci
+Stage 3: Validate  – node --check all JS files
+Stage 4: Build     – docker build → leaveease-app:42 + leaveease-app:latest
+Stage 5: Deploy    – stops app container only, starts new versioned container
+Stage 6: Health    – curl localhost:3000 confirms app is live
+       │
+       ▼
+http://localhost:3000 updated  ✅
+MySQL data untouched           ✅
+```
+
+### Image Versioning
+
+Every successful Jenkins build produces **two tags**:
+
+| Tag | Example | Purpose |
+|-----|---------|---------|
+| `leaveease-app:BUILD_NUMBER` | `leaveease-app:42` | Permanent version — used for rollback |
+| `leaveease-app:latest` | `leaveease-app:latest` | Always points to newest build |
+
+```bash
+# See all versions on your machine
+docker images leaveease-app
+
+# Output example:
+# REPOSITORY      TAG    IMAGE ID       CREATED         SIZE
+# leaveease-app   42     a1b2c3d4e5f6   2 minutes ago   210MB
+# leaveease-app   41     b2c3d4e5f6a7   1 hour ago      210MB
+# leaveease-app   latest a1b2c3d4e5f6   2 minutes ago   210MB
+```
+
+### Rollback to a Previous Version
+
+If build 42 breaks the app, roll back to build 41 in 3 commands:
+
+```bash
+# 1. Stop and remove the broken app container
+docker stop leaveease_app
+docker rm   leaveease_app
+
+# 2. Start the previous version
+docker run -d \
+  --name leaveease_app \
+  --network leaveease_leaveease_default \
+  -p 3000:3000 \
+  -e DB_HOST=leaveease_mysql \
+  -e DB_USER=root \
+  -e DB_PASSWORD=vaasu \
+  -e DB_NAME=leaveease \
+  -e PORT=3000 \
+  -e NODE_ENV=production \
+  leaveease-app:41
+
+# 3. Verify it's running
+docker ps
+curl http://localhost:3000/
+```
+
+MySQL data is **never affected** by rollback — only the app container changes.
 
 ### Jenkins Job Setup (one-time)
 
@@ -83,22 +156,39 @@ docker-compose down -v
 3. SCM: **Git** → paste your GitHub repo URL
 4. Branch: `*/main`
 5. Script Path: `Jenkinsfile`
-6. Click **Save** → **Build Now**
+6. Check: **GitHub hook trigger for GITScm polling**
+7. Click **Save** → **Build Now** (once, to register triggers)
 
-### What the pipeline does
+### GitHub Webhook Setup (for instant trigger)
 
+1. GitHub repo → **Settings** → **Webhooks** → **Add webhook**
+2. Payload URL: `http://YOUR_MACHINE_IP:8080/github-webhook/`
+3. Content type: `application/json`
+4. Event: **Just the push event**
+5. Click **Add webhook**
+
+After this: `git push` → Jenkins builds within seconds automatically.
+
+---
+
+## Deployment Verification Commands
+
+```bash
+# Which image is currently running?
+docker inspect leaveease_app --format "Image: {{.Config.Image}}"
+
+# See all built versions
+docker images leaveease-app
+
+# Live app logs
+docker logs leaveease_app --tail=30 -f
+
+# MySQL still has data?
+docker exec leaveease_mysql mysql -uroot -pvaasu -e "SELECT COUNT(*) FROM leaveease.users;"
+
+# Health check
+curl -L http://localhost:3000/
 ```
-Checkout → Install → Validate → Build Image → Deploy → Health Check
-```
-
-| Stage        | What happens                                      |
-|--------------|---------------------------------------------------|
-| Checkout     | Pulls latest code from GitHub                     |
-| Install      | `npm ci` – installs exact dependencies            |
-| Validate     | `node --check` on every JS file (syntax check)    |
-| Build Image  | `docker build` – creates leaveease-app image      |
-| Deploy       | `docker-compose up -d` – starts MySQL + app       |
-| Health Check | `curl localhost:3000` – confirms app is running   |
 
 ---
 
@@ -109,57 +199,27 @@ LeaveEase/
 ├── app.js                  ← Express server + all routes
 ├── db.js                   ← MySQL connection
 ├── init-db.js              ← Creates tables + seeds data
+├── middleware/
+│   └── auth.js             ← requireAuth / requireAdmin / requireEmployee
 ├── package.json
 ├── .env                    ← Local secrets (NOT in Git)
 ├── .env.example            ← Template (safe to commit)
 │
 ├── Dockerfile              ← Builds the Node.js image
-├── docker-compose.yml      ← Runs app + MySQL together
-├── .dockerignore           ← Files excluded from image
-├── Jenkinsfile             ← CI/CD pipeline definition
+├── docker-compose.yml      ← Runs app + MySQL (APP_IMAGE variable)
+├── .dockerignore
+├── Jenkinsfile             ← Versioned CI/CD pipeline
 │
-├── views/                  ← EJS templates (HTML pages)
-├── public/                 ← CSS, images, client JS
+├── views/                  ← EJS templates
+│   ├── partials/           ← Shared sidebar components
+│   ├── login.ejs
+│   ├── admin-dashboard.ejs
+│   ├── admin-users.ejs
+│   ├── admin-create-user.ejs
+│   └── ...
+├── public/css/             ← Stylesheets
 ├── routes/                 ← Express route files
-├── controllers/            ← Controller logic
-└── db/schema.sql           ← Reference SQL schema
-```
-
----
-
-## Useful Commands
-
-```bash
-# View live container logs
-docker-compose logs -f
-
-# View only app logs
-docker-compose logs -f app
-
-# Restart just the app (after code change)
-docker-compose restart app
-
-# Open MySQL shell inside the container
-docker exec -it leaveease_mysql mysql -uroot -pvaasu leaveease
-
-# Check running containers
-docker ps
-```
-
----
-
-## How Docker Compose Works (for viva)
-
-```
-docker-compose up --build
-        │
-        ├─► mysql container starts
-        │     └─ MYSQL_DATABASE=leaveease → DB auto-created
-        │     └─ healthcheck polls every 10s until ready
-        │
-        └─► app container starts (waits for mysql healthy)
-              └─ node init-db.js  → creates tables, seeds admin
-              └─ node app.js      → server listens on :3000
+└── controllers/            ← Controller stubs
 ```
 
 ---
@@ -168,8 +228,9 @@ docker-compose up --build
 
 | Problem | Fix |
 |---------|-----|
-| Port 3000 already in use | `docker-compose down` then retry |
-| MySQL connection refused | Wait 30s, MySQL is still starting |
-| `Access denied` for root | Check `DB_PASSWORD` in `.env` matches `docker-compose.yml` |
-| Tables missing | Run `node init-db.js` manually |
-| Jenkins: docker not found | Add Jenkins user to docker group: `sudo usermod -aG docker jenkins` |
+| Port 3000 in use | `docker stop leaveease_app` then retry |
+| MySQL not ready | Wait 30s, check `docker logs leaveease_mysql` |
+| `Access denied` | Check `DB_PASSWORD` in `.env` matches `docker-compose.yml` |
+| Image not found | Run `docker build -t leaveease-app:latest .` once manually |
+| Jenkins: docker not found | Run Jenkins as your user account (not SYSTEM) |
+| Rollback not working | Check network name with `docker network ls` |

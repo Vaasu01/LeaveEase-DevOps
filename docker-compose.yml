@@ -1,36 +1,45 @@
 # ─────────────────────────────────────────────────────────────
-# docker-compose.yml  –  LeaveEase full-stack local deployment
+# docker-compose.yml  –  LeaveEase full-stack deployment
 # ─────────────────────────────────────────────────────────────
-# Starts two containers:
-#   mysql  – official MySQL 8 image, auto-creates the database
-#   app    – our Node.js LeaveEase image
 #
-# Run:  docker-compose up --build
-# Stop: docker-compose down
-# Wipe data too: docker-compose down -v
+# LOCAL DEV (first time or after Dockerfile change):
+#   docker-compose up --build
+#
+# NORMAL START (uses existing image):
+#   docker-compose up -d
+#
+# JENKINS VERSIONED DEPLOY (Jenkins sets APP_IMAGE automatically):
+#   set APP_IMAGE=leaveease-app:42 && docker-compose up -d app
+#
+# STOP (preserves DB data):
+#   docker-compose stop app
+#
+# FULL WIPE including DB:
+#   docker-compose down -v
+# ─────────────────────────────────────────────────────────────
 
 version: "3.9"
 
 services:
 
   # ── 1. MySQL Database ──────────────────────────────────────
+  # NEVER stopped by Jenkins — data volume is always preserved.
   mysql:
     image: mysql:8.0
     container_name: leaveease_mysql
     restart: unless-stopped
 
     environment:
-      MYSQL_ROOT_PASSWORD: vaasu          # root password (matches .env)
-      MYSQL_DATABASE: leaveease           # auto-created on first boot
+      MYSQL_ROOT_PASSWORD: vaasu
+      MYSQL_DATABASE: leaveease
 
     ports:
-      - "3307:3306"   # host:container  (3307 avoids clash with local MySQL)
+      - "3307:3306"   # 3307 on host avoids clash with local MySQL
 
     volumes:
-      - mysql_data:/var/lib/mysql         # persist data between restarts
+      - mysql_data:/var/lib/mysql   # named volume — survives container restarts
 
     healthcheck:
-      # Wait until MySQL is actually ready to accept connections
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pvaasu"]
       interval: 10s
       timeout: 5s
@@ -38,35 +47,29 @@ services:
       start_period: 30s
 
   # ── 2. Node.js Application ────────────────────────────────
+  # APP_IMAGE is set by Jenkins to leaveease-app:BUILD_NUMBER.
+  # Falls back to leaveease-app:latest for local manual runs.
   app:
-    build:
-      context: .          # use the Dockerfile in this folder
-      dockerfile: Dockerfile
+    image: ${APP_IMAGE:-leaveease-app:latest}
 
     container_name: leaveease_app
     restart: unless-stopped
 
-    # Pass environment variables – overrides anything in .env inside the image
     environment:
-      DB_HOST: mysql          # service name above, Docker DNS resolves it
-      DB_USER: root
+      DB_HOST:     mysql
+      DB_USER:     root
       DB_PASSWORD: vaasu
-      DB_NAME: leaveease
-      PORT: 3000
-      NODE_ENV: production
+      DB_NAME:     leaveease
+      PORT:        3000
+      NODE_ENV:    production
 
     ports:
-      - "3000:3000"           # app available at http://localhost:3000
+      - "3000:3000"
 
     depends_on:
       mysql:
-        condition: service_healthy   # wait for MySQL healthcheck to pass
+        condition: service_healthy
 
-    # Optional: mount source for live-reload during development
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
-
-# ── Named volume (data survives container restarts) ──────────
+# ── Named volume — data persists across all restarts ─────────
 volumes:
   mysql_data:
