@@ -3,7 +3,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f1f3ec; /* Soft ivory-green background */
+  background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -13,8 +13,8 @@ body {
 .login-container {
   background-color: white;
   padding: 2.5rem 3rem;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(92, 158, 143, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(26, 35, 126, 0.4);
   width: 100%;
   max-width: 400px;
   box-sizing: border-box;
@@ -27,7 +27,7 @@ body {
 
 .login-form h2 {
   margin-bottom: 1.5rem;
-  color: #5c9e8f;
+  color: #1a237e;
   font-size: 1.8rem;
   font-weight: 700;
   text-align: center;
@@ -44,7 +44,7 @@ label {
 input[type="email"],
 input[type="password"] {
   padding: 0.6rem 1rem;
-  border: 1.8px solid #d6e1dc;
+  border: 1.8px solid #c5cae9;
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
@@ -53,8 +53,8 @@ input[type="password"] {
 
 input[type="email"]:focus,
 input[type="password"]:focus {
-  border-color: #5c9e8f;
-  box-shadow: 0 0 5px #5c9e8f88;
+  border-color: #3949ab;
+  box-shadow: 0 0 5px rgba(57, 73, 171, 0.4);
 }
 
 .login-links {
@@ -64,19 +64,19 @@ input[type="password"]:focus {
 
 .forgot-link {
   font-size: 0.9rem;
-  color: #5c9e8f;
+  color: #3949ab;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .forgot-link:hover {
-  color: #46796f;
+  color: #1a237e;
   text-decoration: underline;
 }
 
 .cta-btn {
   margin-top: 1.8rem;
-  background-color: #2e7d32;
+  background-color: #3949ab;
   color: white;
   padding: 0.75rem 0;
   border: none;
@@ -93,7 +93,7 @@ input[type="password"]:focus {
 }
 
 .cta-btn:hover {
-  background-color: #1b5e20;
+  background-color: #1a237e;
 }
 
 .signup-link {
@@ -104,14 +104,14 @@ input[type="password"]:focus {
 }
 
 .signup-link a {
-  color: #5c9e8f;
+  color: #3949ab;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .signup-link a:hover {
-  color: #46796f;
+  color: #1a237e;
   text-decoration: underline;
 }
 
@@ -126,7 +126,6 @@ input[type="password"]:focus {
   font-size: 0.95rem;
   text-align: center;
   font-weight: 600;
-  /* Ensure error message fits inside form */
   width: 100%;
   box-sizing: border-box;
 }
