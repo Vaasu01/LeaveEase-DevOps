@@ -76,7 +76,7 @@ input[type="password"]:focus {
 
 .cta-btn {
   margin-top: 1.8rem;
-  background-color: #5c9e8f;
+  background-color: #e65c00;
   color: white;
   padding: 0.75rem 0;
   border: none;
@@ -88,7 +88,7 @@ input[type="password"]:focus {
 }
 
 .cta-btn:hover {
-  background-color: #46796f;
+  background-color: #cc5200;
 }
 
 .signup-link {

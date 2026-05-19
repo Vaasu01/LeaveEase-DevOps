@@ -44,6 +44,18 @@ pipeline {
         disableConcurrentBuilds()                      // one build at a time
     }
 
+    // ── Automatic build trigger ───────────────────────────────
+    // Poll GitHub every minute for new commits.
+    // If a new commit is found since the last build, Jenkins
+    // automatically starts the pipeline — no manual click needed.
+    //
+    // Cron format:  *  *  *  *  *
+    //               m  h  D  M  W
+    // H/1 * * * *  =  every 1 minute (H spreads load across Jenkins jobs)
+    triggers {
+        pollSCM('H/1 * * * *')
+    }
+
     stages {
 
         // ── STAGE 1: Checkout ─────────────────────────────────
