@@ -129,34 +129,70 @@ pipeline {
         // ── STAGE 5: Deploy ───────────────────────────────────
         // Stops and removes ONLY the app container.
         // MySQL container and its data volume are NEVER touched.
-        // Then starts the app using the new versioned image via
-        // docker-compose (which reads IMAGE_APP from environment).
+        //
+        // WHY docker run instead of docker-compose:
+        // Jenkins bat steps each spawn a NEW cmd.exe process.
+        // "set VAR=x && docker-compose up" loses the variable
+        // in the new process — the container never starts.
+        // docker run with %IMAGE_TAG% (a Jenkins env var, not a
+        // shell var) is injected by Groovy BEFORE cmd.exe runs,
+        // so it is always reliable.
         stage('Deploy') {
             steps {
-                echo 'Stopping app container only (MySQL stays running)...'
+                echo "Deploying image: ${IMAGE_TAG}"
 
-                // Stop and remove only the app container — NOT mysql
+                // ── Step 1: Stop and remove old app container only ──
+                // MySQL is untouched. || exit 0 = ignore "not found" errors.
                 bat "docker stop %CONTAINER_APP% || exit 0"
                 bat "docker rm   %CONTAINER_APP% || exit 0"
 
-                // Ensure MySQL is running (start if not already up)
+                // ── Step 2: Ensure MySQL is running ─────────────────
                 bat "docker-compose up -d mysql || exit 0"
 
-                echo 'Waiting for MySQL to be healthy...'
+                // ── Step 2b: Ensure the Docker network exists ────────
+                // docker-compose creates it on first run. If MySQL was
+                // already running from a previous session the network
+                // exists. This command is safe to run either way.
+                bat "docker network inspect leaveease-devops-pipeline_default > nul 2>&1 || docker-compose up -d mysql"
+
+                // ── Step 3: Wait for MySQL to be healthy ─────────────
+                echo 'Waiting 15 seconds for MySQL to be ready...'
                 bat 'ping 127.0.0.1 -n 16 > nul'
 
-                // Start the app container using the new image.
-                // APP_IMAGE env var tells docker-compose which tag to use.
-                echo "Starting app with image: ${IMAGE_TAG} ..."
-                bat "set APP_IMAGE=%IMAGE_TAG% && docker-compose up -d app"
+                // ── Step 4: Start app with docker run ────────────────
+                // %IMAGE_TAG% is a Jenkins Groovy env var — Groovy
+                // substitutes it into the string before bat() runs cmd.exe,
+                // so no shell variable passing is needed at all.
+                // Network name = <folder>_default created by docker-compose.
+                echo "Starting container from image: ${IMAGE_TAG} ..."
+                bat """docker run -d ^
+  --name %CONTAINER_APP% ^
+  --network leaveease-devops-pipeline_default ^
+  --restart unless-stopped ^
+  -p 3000:3000 ^
+  -e DB_HOST=%CONTAINER_DB% ^
+  -e DB_USER=root ^
+  -e DB_PASSWORD=vaasu ^
+  -e DB_NAME=leaveease ^
+  -e PORT=3000 ^
+  -e NODE_ENV=production ^
+  %IMAGE_TAG%"""
 
+                echo "Container started with image: ${IMAGE_TAG}"
+
+                // ── Step 5: Wait for app to initialise ───────────────
                 echo 'Waiting 30 seconds for app to initialise...'
                 bat 'ping 127.0.0.1 -n 31 > nul'
 
-                // Show running containers
-                bat 'docker-compose ps'
+                // ── Step 6: Verify container is actually running ──────
+                // docker inspect returns exit code 1 if container missing.
+                // This fails the build immediately if deploy silently failed.
+                bat "docker inspect --format={{.State.Running}} %CONTAINER_APP%"
 
-                echo 'Deployment complete.'
+                // Show running containers in build log
+                bat 'docker ps --filter name=leaveease'
+
+                echo "Deployment complete. Image: ${IMAGE_TAG}"
             }
         }
 
