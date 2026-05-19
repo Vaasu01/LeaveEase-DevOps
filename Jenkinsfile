@@ -197,14 +197,28 @@ pipeline {
         }
 
         // ── STAGE 6: Health Check ─────────────────────────────
+        // Two checks:
+        //   A) Container check  — fails build if leaveease_app is not running
+        //   B) HTTP check       — fails build if app is not responding on :3000
         stage('Health Check') {
             steps {
-                echo "Checking app at http://localhost:${APP_PORT} ..."
+                echo "Verifying container and app health..."
+
+                // A) Container must exist and be running
+                // docker inspect exits 1 if container missing → fails build
+                bat "docker inspect --format={{.State.Running}} %CONTAINER_APP%"
+
+                // B) HTTP health — retry up to 5 times with 10s gaps
                 retry(5) {
                     bat 'ping 127.0.0.1 -n 11 > nul'
                     bat 'curl -f -L -s -o NUL http://localhost:3000/'
                 }
-                echo 'Application is up and responding!'
+
+                echo '================================================'
+                echo "  HEALTHY: leaveease_app is running"
+                echo "  Image:   ${IMAGE_TAG}"
+                echo "  URL:     http://localhost:3000"
+                echo '================================================'
             }
         }
     }

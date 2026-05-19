@@ -77,7 +77,42 @@ docker-compose down -v
 
 ---
 
-## Option C – Jenkins CI/CD Pipeline (Versioned)
+## Auto Migration (no manual SQL ever)
+
+`init-db.js` runs automatically on every container start before `app.js`.
+
+It is a **safe, idempotent migration script**:
+
+| Operation | How it's safe |
+|-----------|--------------|
+| Create tables | `CREATE TABLE IF NOT EXISTS` — skipped if table exists |
+| Add columns | Checks `INFORMATION_SCHEMA.COLUMNS` first — `ALTER TABLE` only runs if column is missing |
+| Seed data | Checks row count before inserting — never duplicates |
+| Admin password | Always refreshed to `admin123` — existing employees untouched |
+| DB volume | `mysql_data` named volume — never deleted by Jenkins |
+
+### What happens on every `git push`
+
+```
+git push
+  ↓ Jenkins detects push
+  ↓ Build new image: leaveease-app:BUILD_NUMBER
+  ↓ Stop old app container (MySQL stays running)
+  ↓ docker run new container
+  ↓ Container starts → node init-db.js runs
+      ├─ Connects to MySQL (retries up to 15x)
+      ├─ CREATE TABLE IF NOT EXISTS (all tables)
+      ├─ Checks INFORMATION_SCHEMA for missing columns
+      ├─ ALTER TABLE only if column missing
+      ├─ Seeds leave types if empty
+      └─ Refreshes admin password
+  ↓ node app.js starts
+  ↓ Jenkins verifies container is running
+  ↓ Jenkins curls http://localhost:3000 (fails build if down)
+  ↓ localhost updated ✅
+```
+
+
 
 ### What happens on every git push
 
