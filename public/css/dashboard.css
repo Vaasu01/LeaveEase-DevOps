@@ -1,13 +1,13 @@
 /* Dashboard-specific styles */
 :root {
-  --primary-color: #e65c00;
-  --primary-dark: #cc5200;
-  --background-color: #f1f3ec;
+  --primary-color: #6a0dad;
+  --primary-dark: #4b0082;
+  --background-color: #f3f0ff;
   --white: #ffffff;
   --text-primary: #4a4a4a;
-  --text-secondary: #5c9e8f;
-  --border-color: #d6e1dc;
-  --shadow-color: rgba(92, 158, 143, 0.25);
+  --text-secondary: #6a0dad;
+  --border-color: #d6c8f0;
+  --shadow-color: rgba(106, 13, 173, 0.2);
   --error-red: #b00020;
   --success-green: #2e7d32;
 }
