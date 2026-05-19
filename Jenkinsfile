@@ -118,7 +118,7 @@ pipeline {
                 bat 'docker-compose down --remove-orphans || exit 0'
 
                 echo 'Starting containers with docker-compose...'
-                bat 'docker-compose up -d --build'
+                bat 'docker-compose up -d'
 
                 // Give MySQL + the Node app time to fully initialise.
                 // timeout /t 35 /nobreak = Windows equivalent of "sleep 35"
