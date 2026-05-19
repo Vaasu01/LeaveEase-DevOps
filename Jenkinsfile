@@ -45,15 +45,13 @@ pipeline {
     }
 
     // ── Automatic build trigger ───────────────────────────────
-    // Poll GitHub every minute for new commits.
-    // If a new commit is found since the last build, Jenkins
-    // automatically starts the pipeline — no manual click needed.
-    //
-    // Cron format:  *  *  *  *  *
-    //               m  h  D  M  W
-    // H/1 * * * *  =  every 1 minute (H spreads load across Jenkins jobs)
+    // Runs the full pipeline every 2 minutes on a schedule.
+    // This means Jenkins redeploys automatically without needing
+    // a manual "Build Now" click to activate polling.
+    // Combined with pollSCM so it also triggers on every git push.
     triggers {
-        pollSCM('H/1 * * * *')
+        cron('H/2 * * * *')        // redeploy every 2 minutes
+        pollSCM('H/1 * * * *')     // also trigger immediately on git push
     }
 
     stages {
