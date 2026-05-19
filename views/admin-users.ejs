@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Manage Users – LeaveEase</title>
+  <link rel="stylesheet" href="/public/css/dashboard.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <style>
+    .users-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+    .btn-primary { background:var(--primary-color); color:#fff; border:none; padding:0.7rem 1.4rem; border-radius:8px; font-size:0.95rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; transition:background 0.2s; }
+    .btn-primary:hover { background:var(--primary-dark); }
+    .users-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px var(--shadow-color); }
+    .users-table th { background:var(--primary-color); color:#fff; padding:0.9rem 1rem; text-align:left; font-size:0.9rem; font-weight:600; }
+    .users-table td { padding:0.85rem 1rem; border-bottom:1px solid var(--border-color); font-size:0.93rem; vertical-align:middle; }
+    .users-table tr:last-child td { border-bottom:none; }
+    .users-table tr:hover td { background:#f9fffe; }
+    .badge-active   { background:#e8f5e9; color:#2e7d32; padding:0.25rem 0.7rem; border-radius:20px; font-size:0.82rem; font-weight:600; }
+    .badge-inactive { background:#fff3e0; color:#e65100; padding:0.25rem 0.7rem; border-radius:20px; font-size:0.82rem; font-weight:600; }
+    .action-btn { border:none; padding:0.4rem 0.8rem; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
+    .btn-disable  { background:#fff3e0; color:#e65100; }
+    .btn-enable   { background:#e8f5e9; color:#2e7d32; }
+    .btn-reset    { background:#e3f2fd; color:#1565c0; }
+    .action-btn:hover { opacity:0.8; }
+    .reset-form { display:inline-flex; gap:0.4rem; align-items:center; }
+    .reset-input { padding:0.35rem 0.6rem; border:1px solid #ccc; border-radius:6px; font-size:0.82rem; width:130px; }
+    .msg-success { background:#e8f5e9; color:#2e7d32; border:1.5px solid #c8e6c9; padding:0.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:0.93rem; }
+    .msg-error   { background:#fff3f3; color:#c62828; border:1.5px solid #ffcdd2; padding:0.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:0.93rem; }
+    .empty-state { text-align:center; padding:3rem; color:#888; }
+  </style>
+</head>
+<body>
+<div class="dashboard-container">
+  <%- include('partials/admin-sidebar', { active: 'users' }) %>
+  <div class="dashboard-main">
+    <div class="dashboard-topbar">
+      <div class="dashboard-welcome"><h3><i class="fas fa-users"></i> Employee Accounts</h3></div>
+    </div>
+
+    <% if (success) { %><div class="msg-success"><i class="fas fa-check-circle"></i> <%= success %></div><% } %>
+    <% if (error)   { %><div class="msg-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div><% } %>
+
+    <div class="users-header">
+      <span style="color:#666;font-size:0.95rem;"><%= users.length %> employee(s)</span>
+      <a href="/admin/create-user" class="btn-primary"><i class="fas fa-user-plus"></i> Add Employee</a>
+    </div>
+
+    <% if (users.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-users" style="font-size:3rem;color:#ccc;margin-bottom:1rem;display:block;"></i>
+        No employees yet. <a href="/admin/create-user">Create the first one.</a>
+      </div>
+    <% } else { %>
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Name</th><th>Email</th><th>DOB</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(function(u, i) { %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <td><strong><%= u.name %></strong></td>
+          <td><%= u.email %></td>
+          <td><%= u.dob ? new Date(u.dob).toLocaleDateString('en-GB') : '-' %></td>
+          <td>
+            <% if (u.is_active) { %>
+              <span class="badge-active"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Active</span>
+            <% } else { %>
+              <span class="badge-inactive"><i class="fas fa-circle" style="font-size:0.6rem;"></i> Disabled</span>
+            <% } %>
+          </td>
+          <td style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+            <!-- Reset password -->
+            <form method="POST" action="/admin/reset-password/<%= u.user_id %>" class="reset-form">
+              <input type="password" name="newPassword" placeholder="New password" class="reset-input" minlength="6" required/>
+              <button type="submit" class="action-btn btn-reset"><i class="fas fa-key"></i> Reset</button>
+            </form>
+            <!-- Toggle active -->
+            <form method="POST" action="/admin/toggle-user/<%= u.user_id %>" style="display:inline;">
+              <button type="submit" class="action-btn <%= u.is_active ? 'btn-disable' : 'btn-enable' %>">
+                <i class="fas fa-<%= u.is_active ? 'ban' : 'check' %>"></i>
+                <%= u.is_active ? 'Disable' : 'Enable' %>
+              </button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+<script>function logout(){if(confirm('Logout?'))window.location.href='/auth/logout';}</script>
+</body>
+</html>

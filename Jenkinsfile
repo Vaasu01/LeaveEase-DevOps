@@ -45,13 +45,16 @@ pipeline {
     }
 
     // ── Automatic build trigger ───────────────────────────────
-    // Runs the full pipeline every 2 minutes on a schedule.
-    // This means Jenkins redeploys automatically without needing
-    // a manual "Build Now" click to activate polling.
-    // Combined with pollSCM so it also triggers on every git push.
+    // PRIMARY:  GitHub webhook  → instant trigger on every push
+    //           Setup: GitHub repo → Settings → Webhooks → Add webhook
+    //           Payload URL: http://<your-jenkins-ip>:8080/github-webhook/
+    //           Content type: application/json  |  Event: Just the push event
+    //
+    // FALLBACK: pollSCM every 2 minutes (works even without webhook)
+    //           Also activates the trigger on first run without manual click.
     triggers {
-        cron('H/2 * * * *')        // redeploy every 2 minutes
-        pollSCM('H/1 * * * *')     // also trigger immediately on git push
+        githubPush()                   // webhook: instant on git push
+        pollSCM('H/2 * * * *')        // fallback: poll every 2 minutes
     }
 
     stages {
@@ -63,8 +66,9 @@ pipeline {
             steps {
                 echo 'Pulling latest code from GitHub...'
                 checkout scm
-                // Print the branch name so it appears in the build log
+                // Print commit info — appears in build log for traceability
                 bat 'git log -1 --oneline'
+                bat 'git log -1 --format="Commit: %%H | Author: %%an | Date: %%ad" --date=short'
                 echo 'Code checkout complete.'
             }
         }
@@ -98,6 +102,7 @@ pipeline {
                 bat 'node --check routes/calendar.js'
                 bat 'node --check controllers/authController.js'
                 bat 'node --check controllers/leaveController.js'
+                bat 'node --check middleware/auth.js'
 
                 echo 'All JS files passed syntax check.'
             }

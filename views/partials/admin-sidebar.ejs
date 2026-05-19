@@ -1,0 +1,38 @@
+<div class="dashboard-sidebar">
+  <div class="dashboard-logo-text">Leave<span>Ease</span></div>
+  <div style="font-size:0.75rem;color:#aaa;margin:-1.5rem 0 1.5rem 0.3rem;letter-spacing:0.5px;">ADMIN PANEL</div>
+
+  <button onclick="window.location.href='/admin-dashboard'"
+    class="dashboard-nav-btn <%= typeof active !== 'undefined' && active === 'dashboard' ? 'active' : '' %>">
+    <i class="fas fa-tachometer-alt"></i> Dashboard
+  </button>
+
+  <button onclick="window.location.href='/admin/users'"
+    class="dashboard-nav-btn <%= typeof active !== 'undefined' && active === 'users' ? 'active' : '' %>">
+    <i class="fas fa-users"></i> Employees
+  </button>
+
+  <button onclick="window.location.href='/admin/create-user'"
+    class="dashboard-nav-btn <%= typeof active !== 'undefined' && active === 'create-user' ? 'active' : '' %>">
+    <i class="fas fa-user-plus"></i> Add Employee
+  </button>
+
+  <button onclick="window.location.href='/admin/leave-requests'"
+    class="dashboard-nav-btn <%= typeof active !== 'undefined' && active === 'leaves' ? 'active' : '' %>">
+    <i class="fas fa-calendar-check"></i> Leave Requests
+  </button>
+
+  <button onclick="window.location.href='/admin/logs'"
+    class="dashboard-nav-btn <%= typeof active !== 'undefined' && active === 'logs' ? 'active' : '' %>">
+    <i class="fas fa-list-alt"></i> Audit Logs
+  </button>
+
+  <button onclick="window.location.href='/admin-profile'"
+    class="dashboard-nav-btn <%= typeof active !== 'undefined' && active === 'profile' ? 'active' : '' %>">
+    <i class="fas fa-user-shield"></i> My Profile
+  </button>
+
+  <button onclick="logout()" class="dashboard-nav-btn dashboard-logout-btn">
+    <i class="fas fa-sign-out-alt"></i> Logout
+  </button>
+</div>

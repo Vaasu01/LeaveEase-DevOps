@@ -76,19 +76,24 @@ input[type="password"]:focus {
 
 .cta-btn {
   margin-top: 1.8rem;
-  background-color: #e65c00;
+  background-color: #2e7d32;
   color: white;
   padding: 0.75rem 0;
   border: none;
-  border-radius: 30px;
-  font-size: 1.1rem;
+  border-radius: 8px;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .cta-btn:hover {
-  background-color: #cc5200;
+  background-color: #1b5e20;
 }
 
 .signup-link {

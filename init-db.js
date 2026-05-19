@@ -69,13 +69,20 @@ async function init() {
     // ── 2. users ─────────────────────────────────────────────
     await query(`
       CREATE TABLE IF NOT EXISTS users (
-        user_id   INT AUTO_INCREMENT PRIMARY KEY,
-        name      VARCHAR(100) NOT NULL,
-        email     VARCHAR(100) UNIQUE NOT NULL,
-        password  VARCHAR(255) NOT NULL,
-        dob       DATE NOT NULL
+        user_id    INT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(100) NOT NULL,
+        email      VARCHAR(100) UNIQUE NOT NULL,
+        password   VARCHAR(255) NOT NULL,
+        dob        DATE NOT NULL,
+        role       ENUM('admin','employee') NOT NULL DEFAULT 'employee',
+        is_active  TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // Add new columns to existing tables (safe — IF NOT EXISTS equivalent via IGNORE)
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role ENUM('admin','employee') NOT NULL DEFAULT 'employee'`).catch(()=>{});
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1`).catch(()=>{});
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`).catch(()=>{});
     console.log('   ✔ Table: users');
 
     // ── 3. leave_types ───────────────────────────────────────
@@ -182,7 +189,6 @@ async function init() {
 
     // ── 9. Seed: admin user ──────────────────────────────────
     // Always re-hash and update the password so the DB is never out of sync
-    // with the intended credentials, even if init-db.js is re-run.
     const hashed = await bcrypt.hash('admin123', 10);
 
     const existingAdmin = await query(
@@ -191,33 +197,26 @@ async function init() {
 
     let adminUserId;
     if (existingAdmin.length === 0) {
-      // First run — insert the admin user
       const result = await query(
-        'INSERT INTO users (name, email, password, dob) VALUES (?, ?, ?, ?)',
-        ['Admin', 'admin@leaveease.com', hashed, '1990-01-01']
+        'INSERT INTO users (name, email, password, dob, role, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+        ['Admin', 'admin@leaveease.com', hashed, '1990-01-01', 'admin', 1]
       );
       adminUserId = result.insertId;
       console.log('   ✔ Seeded: admin user  →  admin@leaveease.com / admin123');
     } else {
-      // Already exists — update password to guarantee it matches admin123
       adminUserId = existingAdmin[0].user_id;
       await query(
-        "UPDATE users SET password = ? WHERE email = 'admin@leaveease.com'",
+        "UPDATE users SET password=?, role='admin', is_active=1 WHERE email='admin@leaveease.com'",
         [hashed]
       );
       console.log('   ✔ Admin password refreshed  →  admin@leaveease.com / admin123');
     }
 
     // Ensure admins table entry exists
-    const adminEntry = await query(
-      'SELECT admin_id FROM admins WHERE user_id = ?',
-      [adminUserId]
-    );
+    const adminEntry = await query('SELECT admin_id FROM admins WHERE user_id=?', [adminUserId]);
     if (adminEntry.length === 0) {
-      await query(
-        'INSERT INTO admins (user_id, designation, contact_email) VALUES (?, ?, ?)',
-        [adminUserId, 'System Administrator', 'admin@leaveease.com']
-      );
+      await query('INSERT INTO admins (user_id, designation, contact_email) VALUES (?, ?, ?)',
+        [adminUserId, 'System Administrator', 'admin@leaveease.com']);
       console.log('   ✔ admins table entry created');
     } else {
       console.log('   ✔ admins table entry OK');
