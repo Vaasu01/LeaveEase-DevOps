@@ -3,7 +3,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #eef3fb; /* changed */
+  background-color: #f1f3ec;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -11,10 +11,10 @@ body {
 }
 
 .login-container {
-  background-color: #ffffff;
+  background-color: white;
   padding: 2.5rem 3rem;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(65, 105, 225, 0.22); /* changed */
+  box-shadow: 0 6px 20px rgba(92, 158, 143, 0.25);
   width: 100%;
   max-width: 400px;
   box-sizing: border-box;
@@ -27,7 +27,7 @@ body {
 
 .login-form h2 {
   margin-bottom: 1.5rem;
-  color: #4169e1; /* changed */
+  color: #5c9e8f;
   font-size: 1.8rem;
   font-weight: 700;
   text-align: center;
@@ -35,7 +35,7 @@ body {
 
 label {
   font-weight: 600;
-  color: #384860; /* changed */
+  color: #4a4a4a;
   margin-bottom: 0.3rem;
   margin-top: 1rem;
   font-size: 0.95rem;
@@ -44,7 +44,7 @@ label {
 input[type="email"],
 input[type="password"] {
   padding: 0.6rem 1rem;
-  border: 1.8px solid #cfd9ee; /* changed */
+  border: 1.8px solid #d6e1dc;
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
@@ -53,8 +53,8 @@ input[type="password"] {
 
 input[type="email"]:focus,
 input[type="password"]:focus {
-  border-color: #4169e1; /* changed */
-  box-shadow: 0 0 5px rgba(65, 105, 225, 0.45); /* changed */
+  border-color: #5c9e8f;
+  box-shadow: 0 0 5px #5c9e8f88;
 }
 
 .login-links {
@@ -64,19 +64,19 @@ input[type="password"]:focus {
 
 .forgot-link {
   font-size: 0.9rem;
-  color: #4169e1; /* changed */
+  color: #5c9e8f;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .forgot-link:hover {
-  color: #274bb5; /* changed */
+  color: #46796f;
   text-decoration: underline;
 }
 
 .cta-btn {
   margin-top: 1.8rem;
-  background-color: #4169e1; /* changed */
+  background-color: #5c9e8f;
   color: white;
   padding: 0.75rem 0;
   border: none;
@@ -93,33 +93,33 @@ input[type="password"]:focus {
 }
 
 .cta-btn:hover {
-  background-color: #274bb5; /* changed */
+  background-color: #46796f;
 }
 
 .signup-link {
   margin-top: 1.5rem;
   font-size: 0.95rem;
   text-align: center;
-  color: #384860; /* changed */
+  color: #4a4a4a;
 }
 
 .signup-link a {
-  color: #4169e1; /* changed */
+  color: #5c9e8f;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .signup-link a:hover {
-  color: #274bb5; /* changed */
+  color: #46796f;
   text-decoration: underline;
 }
 
 /* Error message styling */
 .error-message {
-  background-color: #ffe5e5; /* changed */
-  color: #c62828; /* changed */
-  border: 1.5px solid #f2b5b5; /* changed */
+  background-color: #ffe8e8;
+  color: #b00020;
+  border: 1.5px solid #e0b4b4;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
