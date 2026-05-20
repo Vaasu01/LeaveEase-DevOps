@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS leaveease;
+        CREATE DATABASE IF NOT EXISTS leaveease;
 USE leaveease;
 
 -- USERS TABLE

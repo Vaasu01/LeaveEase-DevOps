@@ -117,8 +117,8 @@ input[type="password"]:focus {
 
 /* Error message styling */
 .error-message {
-  background-color: #ffe5e5; /* changed */
-  color: #c62828; /* changed */
+  background-color: #e5feff00; /* changed */
+  color: #c6288498; /* changed */
   border: 1.5px solid #f2b5b5; /* changed */
   padding: 0.75rem 1rem;
   border-radius: 8px;
